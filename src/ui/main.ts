@@ -25,8 +25,11 @@ import { type Palette, createFallbackPalette, loadPaletteFromUrl } from '../core
 import { type IndexedLayer, type SecondaryLayer, type SlpFile, PixelKind } from '../core/types';
 import { renderFrame } from '../core/render';
 import { encodeRow } from '../core/slpWriter';
+import { createPaletteRemapUI } from './paletteRemap';
 
 const readState = createReadState();
+const remapUI = createPaletteRemapUI(readState, reRenderVisible);
+readState.onSelectionChanged = remapUI.refresh;
 let importPalette: Palette = createFallbackPalette();
 refreshPaletteBar(readState.palette, readState.playerPalette);
 
@@ -241,6 +244,7 @@ for (const id of [
 }
 
 function reRenderVisible(): void {
+  remapUI.refresh();
   if (!readState.slp) return;
   const opts = readRenderOptions(readState);
   for (const [i, canvas] of readState.thumbs.entries()) {

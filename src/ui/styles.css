@@ -281,3 +281,65 @@ button:disabled {
   padding: 4px 8px;
 }
 .import-row button:hover { background: rgba(248, 113, 113, 0.1); }
+
+/* Palette remap uses a native modal: Escape, focus containment and centering. */
+.remap-dialog {
+  width: min(940px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  padding: 24px;
+  overflow: auto;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 24px 90px #0009;
+}
+.remap-dialog::backdrop { background: #050810bc; backdrop-filter: blur(4px); }
+.remap-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
+.remap-heading h2 { margin: 0; font-size: 1.2rem; }
+.remap-heading p, .remap-help, .remap-note { color: var(--muted); font-size: 0.83rem; line-height: 1.5; }
+.remap-heading p { margin: 6px 0 20px; }
+.remap-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 300px); gap: 24px; }
+.remap-controls { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.remap-controls label { font-size: 0.85rem; color: var(--muted); }
+.remap-controls select {
+  width: 100%; min-width: 0; padding: 9px 10px;
+  background: var(--bg-elev); color: var(--text);
+  border: 1px solid var(--border); border-radius: 6px;
+}
+.remap-color-fields { display: grid; gap: 12px; margin-top: 4px; }
+.remap-color-field { display: flex; align-items: center; gap: 10px; margin-top: 5px; }
+.remap-chip { display: inline-block; flex: 0 0 28px; width: 28px; height: 28px; border: 1px solid #ffffff45; border-radius: 6px; }
+.remap-help { margin: 0; }
+.remap-colors { display: grid; grid-template-columns: repeat(16, minmax(0, 1fr)); gap: 4px; padding: 4px; max-height: 176px; overflow: auto; }
+.remap-colors button { min-width: 0; min-height: 24px; padding: 0; border: 1px solid #ffffff24; border-radius: 3px; }
+.remap-colors button:hover { outline: 2px solid var(--accent); outline-offset: 1px; }
+.remap-colors button[aria-pressed='true'] { outline: 2px solid var(--text); outline-offset: 1px; box-shadow: 0 0 0 4px var(--accent); }
+.remap-dialog button:focus-visible, .remap-dialog select:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.remap-mappings { list-style: none; padding: 0; margin: 4px 0 0; max-height: 170px; overflow: auto; }
+.remap-mappings li { display: flex; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); }
+.remap-mappings li > span:nth-child(2) { flex: 1; font-variant-numeric: tabular-nums; }
+.remap-quiet { background: var(--bg-elev); color: var(--text); border: 1px solid var(--border); }
+.remap-quiet:hover { background: var(--border); }
+.remap-heading > button { padding: 3px 11px; font-size: 1.5rem; }
+.remap-previews { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.remap-previews figure { margin: 0; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.remap-previews figcaption { padding: 8px 12px; background: var(--bg-elev); font-size: 0.82rem; color: var(--muted); }
+.remap-canvas-wrap {
+  display: flex; justify-content: center; align-items: center; height: 170px; padding: 12px;
+  background: repeating-conic-gradient(#1a1d24 0% 25%, #252a34 0% 50%) 50% / 16px 16px;
+}
+.remap-canvas-wrap canvas { image-rendering: pixelated; max-width: 100%; max-height: 100%; object-fit: contain; }
+.remap-note { border-top: 1px solid var(--border); padding-top: 14px; margin: 18px 0 10px; }
+.remap-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; position: sticky; bottom: -24px; background: var(--bg); padding: 12px 0; }
+#remap-result { margin: 0; color: var(--ok); font-size: 0.85rem; }
+#remap-result[data-tone='error'] { color: var(--err); }
+@media (max-width: 640px) {
+  .remap-dialog { padding: 16px; }
+  .remap-body { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .remap-previews { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .remap-previews > p { grid-column: 1 / -1; }
+  .remap-canvas-wrap { height: 130px; padding: 8px; }
+  .remap-footer { position: sticky; bottom: -16px; background: var(--bg); padding: 12px 0; }
+}

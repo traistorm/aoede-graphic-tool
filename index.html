@@ -94,9 +94,12 @@
           <button id="btn-export-sheet" disabled>Ghép spritesheet</button>
           <button id="btn-export-meta" disabled>Tải metadata.json</button>
           <button id="btn-replace-frame" disabled>Thay frame bằng PNG</button>
+          <button id="btn-remap-palette" disabled>Đổi màu palette</button>
           <input type="file" id="file-replace-frame" accept="image/png,.png" hidden />
           <button id="btn-export-slp" disabled>Xuất file .SLP</button>
         </div>
+
+        <p id="remap-result" class="hint" role="status" hidden></p>
 
         <div id="thumbs" class="thumbs"></div>
         <div id="fullsize" class="fullsize" hidden>
@@ -187,6 +190,49 @@
         </article>
       </section>
     </main>
+
+    <dialog id="remap-dialog" class="remap-dialog" aria-labelledby="remap-title">
+      <div class="remap-heading">
+        <div>
+          <h2 id="remap-title">Đổi màu palette</h2>
+          <p>Ghép màu nguồn với màu có sẵn trong palette. Không đổi kích thước hoặc hình dáng.</p>
+        </div>
+        <button id="remap-close" class="remap-quiet" aria-label="Đóng">×</button>
+      </div>
+      <div class="remap-body">
+        <section class="remap-controls" aria-label="Thiết lập đổi màu">
+          <label for="remap-scope">Áp dụng cho</label>
+          <select id="remap-scope">
+            <option value="current">Frame đang chọn</option>
+            <option value="all">Toàn bộ frame</option>
+          </select>
+          <div class="remap-color-fields">
+            <label>Màu nguồn đang dùng
+              <span class="remap-color-field"><span id="remap-source-chip" class="remap-chip"></span><select id="remap-source"></select></span>
+            </label>
+            <label>Đổi thành
+              <span class="remap-color-field"><span id="remap-target-chip" class="remap-chip"></span><select id="remap-target"></select></span>
+            </label>
+          </div>
+          <p class="remap-help">Bấm ô màu bên dưới để chọn màu đích, rồi thêm cặp. Ghép nhiều sắc độ để giữ chiều sâu của ảnh.</p>
+          <div id="remap-colors" class="remap-colors" role="group" aria-label="Màu đích trong palette"></div>
+          <button id="remap-add" type="button">Thêm / cập nhật cặp màu</button>
+          <ul id="remap-mappings" class="remap-mappings" aria-label="Các cặp màu sẽ thay"></ul>
+          <p id="remap-empty" class="remap-help">Chưa có cặp màu. Ảnh gốc được giữ nguyên cho đến khi bấm Áp dụng.</p>
+        </section>
+        <section class="remap-previews" aria-label="So sánh trước và sau">
+          <figure><figcaption>Trước</figcaption><div class="remap-canvas-wrap"><canvas id="remap-before"></canvas></div></figure>
+          <figure><figcaption>Sau</figcaption><div class="remap-canvas-wrap"><canvas id="remap-after"></canvas></div></figure>
+          <p id="remap-preview-info" class="remap-help"></p>
+        </section>
+      </div>
+      <p class="remap-note">Chỉ thay pixel màu thường trên layer chính; giữ màu player, bóng, layer phụ và điểm neo. Màu xem trước phụ thuộc palette đang nạp, không tạo thêm màu RGB mới.</p>
+      <p id="remap-status" class="remap-help" role="status" aria-live="polite"></p>
+      <div class="remap-footer">
+        <button id="remap-cancel" class="remap-quiet" type="button">Hủy</button>
+        <button id="remap-apply" type="button" disabled>Áp dụng đổi màu</button>
+      </div>
+    </dialog>
 
     <script type="module" src="/src/ui/main.ts"></script>
   </body>

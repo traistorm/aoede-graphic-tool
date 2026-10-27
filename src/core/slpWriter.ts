@@ -12,6 +12,8 @@ export interface WritableFrame {
   kind: Uint8Array;
   /** Palette index / player base index / shadow value. */
   value: Uint16Array;
+  /** Giữ nguyên frame_info.properties / palette ID khi xuất file đã chỉnh. */
+  properties?: number;
   /** Layer phụ (chỉ dùng khi ghi 4.0X). */
   secondary?: {
     width: number;
@@ -22,6 +24,7 @@ export interface WritableFrame {
     value: Uint16Array;
     /** 0x02 Shadow (mặc định), 0x08 VFX Alpha... */
     frameType?: number;
+    properties?: number;
   };
 }
 
@@ -103,7 +106,7 @@ export function writeSlp(frames: WritableFrame[], options: WriteOptions = {}): U
     w.u32(0); // cmd_table_offset
     w.u32(0); // outline_table_offset
     w.u32(0); // palette_offset (unused)
-    w.u32(version === '4.0X' ? (options.paletteId ?? 0) : 0); // properties
+    w.u32(f.properties ?? (version === '4.0X' ? (options.paletteId ?? 0) : 0)); // properties
     w.i32(f.width);
     w.i32(f.height);
     w.i32(f.hotspotX);
@@ -149,7 +152,7 @@ export function writeSlp(frames: WritableFrame[], options: WriteOptions = {}): U
       w.u32(0); // sec_cmd_table_offset
       w.u32(0); // sec_outline_table_offset
       w.u32(0); // sec_null
-      w.u24(0); // sec_properties
+      w.u24(s?.properties ?? 0); // sec_properties
       w.u8(s?.frameType ?? 0x02); // sec_frame_type
       w.i32(s?.width ?? 0);
       w.i32(s?.height ?? 0);

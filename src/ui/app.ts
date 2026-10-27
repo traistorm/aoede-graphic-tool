@@ -6,7 +6,7 @@ import { type Palette, PaletteMatcher, createFallbackPalette, getColor } from '.
 import { $, downloadBlob, makeCanvas, readPngFile, setText, show, writeToCanvas, hide } from './dom';
 import JSZip from 'jszip';
 import { frameToIndexedLayer, readPaletteFile } from './importer';
-import { writeSlp, type WritableFrame, type WriteVersion } from '../core/slpWriter';
+import { buildEditedSlp } from '../core/slpExport';
 
 /** Trạng thái toàn cục của tab Đọc. */
 export interface ReadState {
@@ -17,6 +17,7 @@ export interface ReadState {
   selected: number;
   thumbs: HTMLCanvasElement[];
   renderCache: Map<number, ImageData>;
+  onSelectionChanged?: () => void;
 }
 
 export function createReadState(): ReadState {
@@ -221,6 +222,7 @@ function selectFrame(index: number, state: ReadState): void {
     $<HTMLElement>('fullsize-info'),
     `Frame ${index} — ${img.width}×${img.height} — hotspot (${frame.main.hotspotX}, ${frame.main.hotspotY}) — ${countNonTransparent(frame.main)} pixel không trong suốt`,
   );
+  state.onSelectionChanged?.();
 }
 
 export function readRenderOptions(state?: ReadState): {
@@ -393,21 +395,16 @@ export async function replaceSelectedFrame(file: File, state: ReadState): Promis
 
 export function exportSlpFile(state: ReadState): void {
   if (!state.slp) return;
-  const writable: WritableFrame[] = state.slp.frames.map((f) => ({
-    width: f.main.width,
-    height: f.main.height,
-    hotspotX: f.main.hotspotX,
-    hotspotY: f.main.hotspotY,
-    kind: f.main.kind,
-    value: f.main.value,
-    secondary: f.secondary,
-  }));
-  const version = (
-    state.slp.containerVersion === '4.2P' || state.slp.version === '4.0X' ? '4.0X' : '2.0N'
-  ) as WriteVersion;
-  const buf = writeSlp(writable, { version, includeSecondary: true });
-  const blob = new Blob([buf.buffer as ArrayBuffer], { type: 'application/octet-stream' });
-  downloadBlob(blob, `edited_${sanitizeFilename(state.slp.version)}.slp`);
+  try {
+    const buf = buildEditedSlp(state.slp);
+    const blob = new Blob([buf.buffer as ArrayBuffer], { type: 'application/octet-stream' });
+    downloadBlob(blob, `edited_${sanitizeFilename(state.slp.version)}.slp`);
+  } catch (error) {
+    const notice = $<HTMLElement>('remap-result');
+    notice.dataset.tone = 'error';
+    setText(notice, `Không xuất SLP: ${(error as Error).message}`);
+    show(notice);
+  }
 }
 
 // ---------------------------------------------------------------------------

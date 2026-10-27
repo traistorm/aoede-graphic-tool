@@ -7,7 +7,19 @@ Web app client-side để **đọc, xuất ảnh và tạo file `.slp`** cho **A
 1. **Đọc / parse file SLP** — kéo-thả hoặc chọn file `.slp`, tự nhận diện version `2.0N` / `3.0` / `4.0X` / `4.1X` / `4.2P` (container LZ4). Render lưới thumbnail + xem full-size từng frame.
 2. **Export ảnh** — xuất PNG, đóng gói ZIP (nhiều frame + `metadata.json`), ghép spritesheet, tải `metadata.json` riêng. Tất cả xử lý trong trình duyệt, không upload lên server.
 3. **Import ảnh → tạo file SLP** — nhận nhiều PNG, map sang palette index, encode draw command tối ưu (Fill, Greater/Lesser draw/skip), ghi ra `.slp` 2.0N hoặc 4.0X. Tự **đọc lại file vừa build để validate pixel-by-pixel** trước khi cho tải xuống.
-4. **Core remap chỉ số palette** — `remapSlpPalette()` thay chỉ số màu trên layer chính của một hoặc toàn bộ frame; `getPaletteUsage()` thống kê các màu đang dùng. Đây là API trong code, chưa có nút điều khiển trên giao diện và chưa tự đổi hue/giữ sắc độ theo màu đích.
+4. **Đổi màu palette** — nút trong tab Đọc & Export, chọn frame hiện tại hoặc toàn bộ, ghép nhiều cặp màu nguồn → đích rồi xem trước/áp dụng. Chỉ thay màu thường trên layer chính, giữ kích thước, hotspot, màu player và layer phụ.
+
+### Đổi màu trên giao diện
+
+1. Nạp SLP và palette game phù hợp, chọn frame để xem trước.
+2. Bấm **Đổi màu palette**, chọn phạm vi áp dụng.
+3. Chọn màu nguồn đang dùng và màu đích từ dropdown hoặc bảng màu, bấm **Thêm / cập nhật cặp màu**. Có thể ghép nhiều sắc độ sáng/tối trong cùng lượt; các cặp được thay đồng thời.
+4. Đối chiếu ảnh **Trước / Sau** và số pixel thay đổi. **Hủy**, nút đóng hoặc Escape bỏ bản nháp; **Áp dụng đổi màu** cập nhật dữ liệu đang mở, không ghi đè file gốc.
+5. Xuất PNG hoặc **Xuất file .SLP**. SLP được đọc lại để kiểm pixel, hotspot, palette ID từng frame và layer phụ trước khi tải xuống.
+
+Đây là thay chỉ số màu có sẵn, chưa tự đổi hue/giữ sắc độ theo một màu RGB đích và không thêm màu vào palette. Nên ghép nhiều cặp sáng/tối để giữ chiều sâu. Nếu chưa nạp palette game, ảnh dùng palette dự phòng và có cảnh báo.
+
+Ghi SLP đã chỉnh hỗ trợ `2.0N`, `3.0` (xuất thành `2.0N`) và `4.0X`; container `4.2P` xuất thành phiên bản bên trong đã giải nén. `4.1X`, dữ liệu modifier hoặc direct RGBA chưa được writer hỗ trợ: app báo lỗi thay vì tải file mất dữ liệu; có thể xuất PNG. Chưa kiểm tra file đổi màu trong game.
 
 ### Remap màu bằng API core
 
@@ -30,8 +42,8 @@ Chỉ pixel `PixelKind.Palette` trên main layer được đổi. Màu player, s
 outline, direct RGBA và layer phụ giữ nguyên; mọi object/typed array trong kết
 quả được sao chép độc lập, không sửa file đã parse ban đầu. Hàm giữ metadata,
 kích thước và hotspot, không thêm màu mới vào palette hoặc sửa file `.pal`.
-Input phải là `SlpFile` đã parse hợp lệ. Bước ghi SLP vẫn do writer hiện có
-thực hiện; chưa xác nhận kết quả remap trong game.
+Input phải là `SlpFile` đã parse hợp lệ. Dùng `buildEditedSlp()` trong
+`src/core/slpExport.ts` để ghi lại file đã chỉnh với bước kiểm tra đọc lại.
 
 ## Version hỗ trợ
 
@@ -57,9 +69,11 @@ src/
     slpReader.ts    parseSlp() — parse đầy đủ file SLP thành IndexedLayer
     render.ts       Render layer → RgbaImage (hỗ trợ player color override, shadow, layer phụ)
     slpWriter.ts    writeSlp() + validateRoundTrip() (đọc lại file vừa ghi, so khớp pixel)
+    slpExport.ts    Xuất SLP đã chỉnh, giữ palette metadata và kiểm layer phụ
   ui/
     dom.ts          Helper DOM tối giản
     app.ts          Tab Đọc & Export
+    paletteRemap.ts Popup bản nháp remap, chọn màu và xem trước
     importer.ts     Tab Import & tạo SLP
     main.ts         Điểm vào, nối dây sự kiện
     styles.css      CSS dark theme
@@ -67,7 +81,8 @@ test/
   commands.test.ts   Test decode command theo ví dụ trong spec + edge cases
   palette.test.ts    Test JASC-PAL parser, PaletteMatcher, LZ4 block decompression
   paletteRemap.test.ts Test remap đồng thời, chọn frame, clone và validation
-  slp.test.ts        Test encode, writeSlp, validateRoundTrip (55/55 pass)
+  slp.test.ts        Test encode, writeSlp, validateRoundTrip
+  slpExport.test.ts  Test xuất remap, palette ID, metadata và layer phụ
 index.html
 package.json
 tsconfig.json
