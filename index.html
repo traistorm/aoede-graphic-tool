@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SLP Studio — Age of Empires 1 sprite tool</title>
+    <link rel="stylesheet" href="/src/ui/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <h1>SLP Studio</h1>
+      <p class="subtitle">
+        Đọc / xuất / tạo file <code>.slp</code> cho <strong>Age of Empires 1</strong> &amp;
+        <strong>AoE1: Definitive Edition</strong> — chạy hoàn toàn phía client.
+      </p>
+    </header>
+
+    <nav class="tabs" role="tablist">
+      <button class="tab" data-tab="read" role="tab" aria-selected="true">Đọc &amp; Export</button>
+      <button class="tab" data-tab="import" role="tab" aria-selected="false">Import &amp; Tạo SLP</button>
+      <button class="tab" data-tab="about" role="tab" aria-selected="false">Thông tin</button>
+    </nav>
+
+    <main>
+      <section class="panel" id="panel-read" hidden>
+        <div class="dropzone" id="dropzone-slp">
+          <p>
+            <strong>Kéo file .slp vào đây</strong> hoặc
+            <label class="filepick">
+              <input type="file" accept=".slp,application/octet-stream" id="file-slp" />
+              chọn file
+            </label>
+          </p>
+          <p class="hint">
+            Tự nhận diện 2.0N / 3.0 / 4.0X / 4.1X / 4.2P (container LZ4).
+          </p>
+        </div>
+
+        <div class="palette-block">
+          <div class="palette-source">
+            <select id="pal-main" title="Palette chính">
+              <option value="">— chọn palette chính —</option>
+            </select>
+            <label class="filepick">
+              <input type="file" accept=".pal,.palx,.txt" id="file-pal" />
+              Nạp file khác
+            </label>
+            <span id="palette-name" class="hint">(đang dùng palette dự phòng)</span>
+          </div>
+          <div class="palette-bar" id="palette-bar" title="256 entry"></div>
+        </div>
+
+        <div class="render-options">
+          <label>Player
+            <span class="player-row">
+              <select id="player">
+                <option value="1">1 (xanh dương)</option>
+                <option value="2">2 (đỏ)</option>
+                <option value="3">3 (vàng)</option>
+                <option value="4">4 (nâu)</option>
+                <option value="5">5 (cam)</option>
+                <option value="6">6 (lục)</option>
+                <option value="7">7 (tím)</option>
+                <option value="8">8 (xanh lơ)</option>
+              </select>
+              <span class="player-preview" id="player-preview" title="Màu preview ở shade giữa"></span>
+            </span>
+          </label>
+          <label>Player color tự chọn
+            <span class="override-row">
+              <input type="checkbox" id="player-color-enabled" />
+              <input type="color" id="player-color-override" />
+            </span>
+          </label>
+          <label>Shadow alpha
+            <input type="range" id="shadow-alpha" min="0" max="255" value="128" />
+          </label>
+          <label>
+            <input type="checkbox" id="include-secondary" />
+            Vẽ kèm layer phụ (shadow / VFX)
+          </label>
+          <label>
+            <input type="checkbox" id="secondary-only" />
+            Chỉ xuất layer phụ
+          </label>
+        </div>
+
+        <div id="slp-summary" class="summary" hidden></div>
+        <div id="slp-warnings" class="warnings" hidden></div>
+
+        <div class="thumb-actions">
+          <button id="btn-export-png" disabled>Xuất PNG frame đang chọn</button>
+          <button id="btn-export-all" disabled>Export All (.zip)</button>
+          <button id="btn-export-sheet" disabled>Ghép spritesheet</button>
+          <button id="btn-export-meta" disabled>Tải metadata.json</button>
+          <button id="btn-replace-frame" disabled>Thay frame bằng PNG</button>
+          <input type="file" id="file-replace-frame" accept="image/png,.png" hidden />
+          <button id="btn-export-slp" disabled>Xuất file .SLP</button>
+        </div>
+
+        <div id="thumbs" class="thumbs"></div>
+        <div id="fullsize" class="fullsize" hidden>
+          <canvas id="canvas-full"></canvas>
+          <div id="fullsize-info"></div>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-import" hidden>
+        <div class="dropzone" id="dropzone-png">
+          <p>
+            <strong>Kéo PNG vào đây</strong> hoặc
+            <label class="filepick">
+              <input type="file" accept="image/png" id="file-png" multiple />
+              chọn nhiều file
+            </label>
+          </p>
+          <p class="hint">Mỗi ảnh = 1 frame. Tên file được sắp xếp theo thứ tự chọn.</p>
+        </div>
+
+        <div class="palette-block">
+          <div class="palette-source">
+            <label class="filepick">
+              <input type="file" accept=".pal,.palx,.txt" id="file-pal-import" />
+              Nạp palette để map màu
+            </label>
+            <span id="palette-name-import" class="hint">(đang dùng palette dự phòng)</span>
+          </div>
+        </div>
+
+        <div class="render-options">
+          <label>Alpha threshold
+            <input type="range" id="alpha-threshold" min="0" max="255" value="128" />
+          </label>
+          <label>Version đầu ra
+            <select id="output-version">
+              <option value="2.0N">2.0N (AoE1 gốc)</option>
+              <option value="4.0X">4.0X (AoE1:DE, hỗ trợ layer phụ)</option>
+            </select>
+          </label>
+          <label>Hotspot mặc định
+            <select id="hotspot-mode">
+              <option value="center">Tâm ảnh</option>
+              <option value="zero">(0, 0)</option>
+            </select>
+          </label>
+          <label>Loại trừ player color (16..31)
+            <input type="checkbox" id="exclude-player" checked />
+          </label>
+        </div>
+
+        <div id="import-list" class="import-list"></div>
+        <div class="thumb-actions">
+          <button id="btn-build-slp" disabled>Build &amp; validate SLP</button>
+          <button id="btn-clear-import">Xoá danh sách</button>
+        </div>
+
+        <div id="import-result" class="summary" hidden></div>
+      </section>
+
+      <section class="panel" id="panel-about" hidden>
+        <article>
+          <h2>SLP Studio là gì?</h2>
+          <p>
+            Công cụ web client-side để đọc, xem, xuất ảnh và tạo file <code>.slp</code> cho
+            <strong>Age of Empires 1</strong> (1997) và <strong>AoE1: Definitive Edition</strong>.
+          </p>
+          <h3>Version hỗ trợ</h3>
+          <ul>
+            <li><code>2.0N</code> — AoE1 gốc (palette index 1 byte)</li>
+            <li><code>3.0</code> — AoE1:DE terrain/rescale (palette index 1 byte)</li>
+            <li><code>4.0X</code> — AoE1:DE (palette index 1 byte, có thể có layer phụ)</li>
+            <li><code>4.1X</code> — AoE1:DE (display modifier + palette index 2 byte)</li>
+            <li><code>4.2P</code> — container LZ4 bọc ngoài file SLP bình thường (Update 38862+)</li>
+          </ul>
+          <h3>Quy trình import</h3>
+          <ol>
+            <li>Chọn nhiều PNG (mỗi ảnh = 1 frame).</li>
+            <li>App đọc pixel, tìm màu gần nhất trong palette, gom lệnh tối ưu (Fill, Greater/Lesser draw/skip).</li>
+            <li>App tự build file SLP, sau đó đọc lại để so khớp từng pixel — nếu lệch thì báo lỗi cụ thể (frame, dòng, cột).</li>
+            <li>Khi validation pass, file <code>.slp</code> mới được cho tải xuống.</li>
+          </ol>
+          <h3>Bảo mật dữ liệu</h3>
+          <p>
+            Toàn bộ xử lý chạy trong trình duyệt của bạn. File <code>.slp</code> và
+            <code>.pal</code> không bao giờ được upload lên server.
+          </p>
+        </article>
+      </section>
+    </main>
+
+    <script type="module" src="/src/ui/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,13 @@
+node_modules/
+dist/
+*.local
+.DS_Store
+.vite/
+coverage/
+# Palette files có bản quyền của Microsoft/Xbox Game Studios — không commit.
+# Nếu muốn commit, hãy bỏ ignore rule này.
+palettes/*.pal
+palettes/*.palx
+palettes/palettes.conf
+# File sprite game dùng thử trên máy, không phải source của tool.
+*.[sS][lL][pP]

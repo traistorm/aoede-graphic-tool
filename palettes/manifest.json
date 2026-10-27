@@ -1,0 +1,30 @@
+{
+  "_comment": "Generated from palettes.conf trong AoE1:DE Assets/Palettes. Đổi đường dẫn file nếu bạn copy palette vào chỗ khác.",
+  "main": [
+    { "id": 1, "name": "01_units", "file": "01_units.pal", "description": "Đơn vị quân" },
+    { "id": 2, "name": "02_nature", "file": "02_nature.pal", "description": "Thiên nhiên" },
+    { "id": 3, "name": "03_buildings_stonetool", "file": "03_buildings_stonetool.pal", "description": "Công trình đá/công cụ" },
+    { "id": 4, "name": "04_buildings_greek", "file": "04_buildings_greek.pal", "description": "Công trình Greek" },
+    { "id": 5, "name": "05_buildings_babylon", "file": "05_buildings_babylon.pal", "description": "Công trình Babylon" },
+    { "id": 6, "name": "06_buildings_roman", "file": "06_buildings_roman.pal", "description": "Công trình Roman" },
+    { "id": 7, "name": "07_nature_tree_conifers", "file": "07_nature_tree_conifers.pal", "description": "Cây lá kim" },
+    { "id": 8, "name": "08_nature_tree_palms", "file": "08_nature_tree_palms.pal", "description": "Cây cọ" },
+    { "id": 9, "name": "09_buildings_asian", "file": "09_buildings_asian.pal", "description": "Công trình Á" },
+    { "id": 10, "name": "10_buildings_egypt", "file": "10_buildings_egypt.pal", "description": "Công trình Ai Cập" },
+    { "id": 53, "name": "53_moveto", "file": "53_moveto.pal", "description": "SFX - di chuyển" },
+    { "id": 54, "name": "effects", "file": "effects.pal", "description": "Hiệu ứng" },
+    { "id": 63, "name": "modulation_colors", "file": "modulation_colors.palx", "description": "Modulation" }
+  ],
+  "playerColor": [
+    { "id": 55, "player": 1, "name": "blue", "file": "playercolor_blue.pal", "label": "1 — Blue (xanh dương)" },
+    { "id": 56, "player": 2, "name": "red", "file": "playercolor_red.pal", "label": "2 — Red (đỏ)" },
+    { "id": 57, "player": 3, "name": "yellow", "file": "playercolor_yellow.pal", "label": "3 — Yellow (vàng)" },
+    { "id": 58, "player": 4, "name": "brown", "file": "playercolor_brown.pal", "label": "4 — Brown (nâu)" },
+    { "id": 59, "player": 5, "name": "orange", "file": "playercolor_orange.pal", "label": "5 — Orange (cam)" },
+    { "id": 60, "player": 6, "name": "green", "file": "playercolor_green.pal", "label": "6 — Green (lục)" },
+    { "id": 61, "player": 7, "name": "purple", "file": "playercolor_purple.pal", "label": "7 — Purple (tím)" },
+    { "id": 62, "player": 8, "name": "teal", "file": "playercolor_teal.pal", "label": "8 — Teal (xanh lơ)" }
+  ],
+  "artdesk": { "name": "playercolor_artdesk", "file": "playercolor_artdesk.pal", "description": "ArtDesk" },
+  "fire": { "name": "fire_palette", "file": "fire_palette.pal", "description": "Lửa" }
+}
