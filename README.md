@@ -45,6 +45,139 @@ kích thước và hotspot, không thêm màu mới vào palette hoặc sửa fi
 Input phải là `SlpFile` đã parse hợp lệ. Dùng `buildEditedSlp()` trong
 `src/core/slpExport.ts` để ghi lại file đã chỉnh với bước kiểm tra đọc lại.
 
+## Palette chuyển tông: mẫu hoa anh đào
+
+### Phân biệt hai cách đổi màu
+
+| Cách | Thay đổi gì? | Cần palette mới? | Trạng thái |
+|---|---|---|---|
+| Remap index | Ví dụ pixel đang trỏ ô 8 chuyển sang ô 73; RGB của các ô không đổi | Không, nếu màu đích đã có trong palette đang dùng | Đã có nút **Đổi màu palette** |
+| Chuyển tông palette | Pixel vẫn trỏ ô 8, nhưng RGB tại ô 8 trong bản palette riêng đổi từ xanh sang hồng | Có, phải giữ file palette đi kèm | Đã thử bằng script ngoài repo; **chưa có chức năng tạo/xuất palette trên UI** |
+
+Mẫu hoa anh đào dùng cách thứ hai vì palette `02_nature.pal` gốc gần như không có
+dải hồng sáng phù hợp. Không dùng AI sinh ảnh, không phóng to rồi thu nhỏ sprite,
+không thêm ô màu thứ 257 và không sửa palette gốc. Các hình so sánh phóng lớn chỉ
+để xem, dùng nearest-neighbor; PNG xuất riêng vẫn giữ kích thước thật.
+
+### Thuật toán đã dùng, đủ để tái tạo
+
+Đầu vào là bản sao palette 256 màu đã parse bằng `parseJascPal()`; không sửa trực
+tiếp `palette.data` của bản gốc. Với mỗi ô RGB, chuẩn hóa ba kênh về `0..1`, tính
+HSV và chỉ chọn ô thỏa **đồng thời**:
+
+- Hue trong `[49°, 175°]`: vàng xanh đến xanh lá.
+- Chênh lệch `max(R,G,B) - min(R,G,B) >= 0.035`.
+- Saturation `>= 0.22`.
+
+Tính độ sáng có trọng số trên các kênh sRGB đã chuẩn hóa:
+`y = 0.2126R + 0.7152G + 0.0722B`. Đây là đại lượng dùng cho hiệu ứng thử,
+không phải phép đo luminance tuyến tính hay bảo toàn độ sáng vật lý.
+Đặt `t = min(1, (y / 0.75)^0.72)`, nội suy tuyến tính lần lượt qua năm mốc RGB:
+
+| Vị trí | RGB | Vai trò |
+|---|---|---|
+| 0 | `62, 29, 47` | Bóng hồng sẫm |
+| 0.25 | `148, 64, 102` | Hồng đậm |
+| 0.5 | `222, 133, 167` | Hồng trung gian |
+| 0.75 | `255, 211, 225` | Hồng phấn |
+| 1 | `255, 245, 245` | Trắng phớt hồng |
+
+Chỉ thay RGB ở đúng chỉ số đã chọn; giữ nguyên mọi ô khác. Cách này giữ thứ tự
+sáng/tối tương đối để tán cây còn chiều sâu, nhưng có chủ động nâng sáng và không
+cam kết giữ độ tương phản y hệt nguồn. Ngưỡng trên dành cho mẫu thử, không phải
+quy tắc chuẩn cho mọi cây/palette.
+
+Ví dụ hàm thuần tương đương script đã dùng (chỉ là tài liệu, chưa tích hợp vào app):
+
+```ts
+import type { Palette } from './src/core/palette';
+
+function makeSakuraPalette(original: Palette): Palette {
+  const palette = { ...original, name: '02_nature_sakura', data: original.data.slice() };
+  const stops = [[62, 29, 47], [148, 64, 102], [222, 133, 167], [255, 211, 225], [255, 245, 245]];
+  for (let i = 0; i < palette.size; i++) {
+    const [r, g, b] = Array.from(original.data.slice(i * 3, i * 3 + 3), v => v / 255);
+    const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+    if (d < 0.035 || d / max < 0.22) continue;
+    let h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    h = (h * 60 + 360) % 360;
+    if (h < 49 || h > 175) continue;
+    const y = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    const pos = Math.min(1, (y / 0.75) ** 0.72) * (stops.length - 1);
+    const a = Math.min(stops.length - 2, Math.floor(pos)), f = pos - a;
+    palette.data.set(stops[a].map((v, c) => Math.round(v + (stops[a + 1][c] - v) * f)), i * 3);
+  }
+  return palette;
+}
+```
+
+Ghi palette thành JASC-PAL: ba dòng đầu là `JASC-PAL`, `0100`, `256`, sau đó
+256 dòng `R G B` theo nguyên thứ tự index. Mẫu này chỉ đổi palette nên có thể dùng
+SLP gốc với palette mới; bản `tree_sakura.slp` được xuất bằng `buildEditedSlp()`
+để kiểm tra writer, **không nhúng RGB mới vào SLP**. SLP vẫn giữ palette ID ban đầu.
+
+### Mở mẫu trên giao diện hiện tại
+
+1. Nạp `tree_sakura.slp` hoặc SLP cây gốc ở tab **Đọc & Export**.
+2. Đợi app nạp file và tự chọn palette theo frame đầu.
+3. Chọn **Nạp file khác** ở phần palette chính, nạp `02_nature_sakura.pal`.
+4. Chọn các frame để kiểm tra, rồi xuất PNG/ZIP/spritesheet như bình thường.
+
+Nên nạp palette tùy chỉnh **sau khi** mở SLP: luồng nạp SLP có thể tự chọn lại
+palette theo metadata. File `.slp` tải xuống không chứa palette tùy chỉnh và không
+tự liên kết theo tên file `.pal`; khi mở lại vẫn cần nạp đúng palette đi kèm.
+PNG đã chứa màu RGBA nên xem riêng được, không cần palette.
+
+### Dùng lại cho cây khác và đưa vào game
+
+- Cây khác cùng bảng RGB/index của `02_nature` có thể dùng palette mới này; kết quả
+  còn tùy các ô màu cây đó sử dụng. Cùng palette ID chỉ là gợi ý, cần kiểm tra đúng
+  file palette/bản game/mod thực tế.
+- Cây dùng palette khác, ví dụ `07_nature_tree_conifers` hoặc `08_nature_tree_palms`,
+  cần tạo bản chuyển tông từ **palette nguồn của nó**, không gắn thẳng palette này.
+- Thuật toán chọn màu, không hiểu bộ phận của cây. Nếu lá và thân dùng chung index,
+  hoặc thân có ô xanh thuộc ngưỡng, cả hai cùng đổi. Không cam kết tự giữ thân cây
+  với mọi sprite; cần xem trước hoặc loại ô đó khỏi tập màu được chuyển.
+- Thay palette dùng chung trong game có thể đổi cả cỏ, bụi cây và vật thể khác dùng
+  các ô tương ứng. Muốn chỉ đổi một loại cây cần xác minh cơ chế đăng ký palette
+  riêng và gán palette cho sprite của đúng bản game/mod. App hiện chưa làm việc đó.
+- Giữ palette gốc và bản sao lưu. Chưa kiểm tra mẫu trong AoE/AoE:DE; không coi việc
+  PNG đúng màu hoặc SLP parse lại thành công là bằng chứng game đã nạp palette mới.
+
+### Kết quả thử và vị trí artifact
+
+Mẫu local: `n_all_treeAsh_x1.SLP`, container `4.2P`, 16 frame; frame 0 là
+`67×74 px`, hotspot `(36, 80)`. Palette nguồn `02_nature.pal` có **156 ô** thỏa
+ngưỡng và được đổi RGB; đây không phải số màu chắc chắn xuất hiện trên từng frame.
+SLP xuất ra `4.0X` đã parse lại, đối chiếu đủ 16 frame: kind/index pixel, kích thước,
+hotspot, palette properties và layer phụ giữ nguyên.
+
+Artifact trên PC thực hiện thử: `D:/projects/aoede-tool/previews/sakura/`:
+
+- `make-preview.mjs`: script dùng Vite SSR để gọi core TypeScript, tạo palette/SLP,
+  dữ liệu RGBA và `report.json`; có đường dẫn tuyệt đối của PC, không phải CLI đóng gói.
+- `make-images.py`: dùng Pillow tạo PNG và ảnh so sánh nearest-neighbor.
+- `02_nature_sakura.pal`, `tree_sakura.slp`, `tree_sakura.png`, `tree_original.png`.
+- `sakura-comparison.png`, `sakura-all-frames.png`, `report.json` (các ô RGB trước/sau).
+
+Các artifact/script thử này nằm **ngoài repo**, không có sẵn khi clone/pull trên PC
+khác. Thuật toán ở trên là tài liệu tái tạo; file game và palette không được commit.
+
+### Gợi ý cho agent phát triển tiếp
+
+Chưa có yêu cầu triển khai tính năng mới trong đợt ghi tài liệu này. Nếu phát triển
+chuyển tông tự động, có thể dùng hàm thuần và UI chọn dải màu nguồn/màu đích, xem
+trước rồi xác nhận; không bắt buộc AI/agent hay API tính phí. Nên:
+
+- Tách rõ chế độ remap index và chỉnh RGB palette, giữ nguyên hành vi remap hiện có.
+- Dùng bản nháp palette sao chép độc lập, hỗ trợ Hủy và không ghi đè palette nguồn.
+- Cho chỉnh tập index cần đổi; không coi nhận diện xanh là phân đoạn lá hoàn hảo.
+- Xuất palette riêng cùng SLP khi cần, giải thích rõ palette ID/đăng ký trong game
+  chưa tự được xử lý; đừng quảng cáo chỉ cần SLP là đủ.
+- Kiểm tra input không bị sửa, số/thứ tự ô màu giữ nguyên, ô ngoài tập chọn giữ nguyên,
+  các mức tối/sáng và nhiều loại cây. Đọc lại SLP và đối chiếu pixel/metadata/layer phụ;
+  thử trong game riêng nếu muốn xác nhận tương thích thực tế.
+
 ## Version hỗ trợ
 
 | Version | Game | Ghi chú |
